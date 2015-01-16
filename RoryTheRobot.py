@@ -8,8 +8,6 @@ Arguments
 Options
     -h / -help	: displays this help file
 """
-
-# Import all libraries needed
 from __future__ import division
 import docopt
 import yaml
@@ -17,10 +15,9 @@ from pylab import *
 import numpy as np
 import random
 
-
+# test board and arguments for doctesting
 test_board = {'Board_dimentions': [3, 3], 'Learning_rate': 0.2, 'Starting_Position': [0, 0], 'Number_of_deaths': 1, 'Success_rate': 0.8, 'Goal_Position': [2, 2], 'Costs': {'Death': -50, 'Goal': 50, 'Move': -1}, 'Discount_rate': 0.5, 'Death_Positions': {'Death 1': [1, 1]}, 'Action_selection_parameter': 0.6}
 test_arguments = {'<board_file>': 'board2.yml', '<number_of_iterations>': '500'}
-
 
 
 class Squares():
@@ -71,68 +68,33 @@ class Robot():
 			0
 			>>> r.action_selection_parameter
 			0.6
+			>>> r.Vs
+			{(0, 1): 0, (1, 2): 0, (0, 0): 0, (2, 1): 0, (0, 2): 0, (2, 0): 0, (2, 2): 0, (1, 0): 0, (1, 1): 0}
+			>>> r.Qs
+			{(0, 1): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (1, 2): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (0, 0): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (2, 1): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (0, 2): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (2, 0): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (2, 2): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (1, 0): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (1, 1): {'West': 0, 'East': 0, 'North': 0, 'South': 0}}
+			>>> r.transitions
+			{'West': [0.06666666666666665, 0.06666666666666665, 0.06666666666666665, 0.8], 'East': [0.06666666666666665, 0.8, 0.06666666666666665, 0.06666666666666665], 'North': [0.8, 0.06666666666666665, 0.06666666666666665, 0.06666666666666665], 'South': [0.06666666666666665, 0.06666666666666665, 0.8, 0.06666666666666665]}
+			>>> r.movement_dict['North'](1, 2)
+			(1, 2)
+			>>> r.movement_dict['East'](0, 0)
+			(1, 0)
 		"""
 		self.playing_board = playing_board
+		self.actions = ['North', 'East', 'South', 'West']
 		self.action_selection_parameter = action_selection_parameter
-		self.Vs = self.initialiseVs()
-		self.Qs = self.initialiseQs()
+		self.Vs = {tuple(sqr.coords):0 for row in self.playing_board.board_squares for sqr in row}
+		self.Qs = Qs = {tuple(sqr.coords):{action:0 for action in self.actions} for row in self.playing_board.board_squares for sqr in row}
 		self.current_moves = 0
 		self.current_iteration = 0
 		self.x_pos = self.playing_board.starting_x
 		self.y_pos = self.playing_board.starting_y
 		self.learning_rate = learning_rate
 		self.discount_rate = discount_rate
-		self.transitions = self.find_transitions(success_rate)
-		self.movement_dict = self.find_movement()
-
-	def initialiseVs(self):
-		"""
-		Initialises the robot's knowledge of the V values of every square
-
-			>>> b = Board(test_board, test_arguments)
-			>>> r = b.robot
-			>>> r.Vs
-			{(0, 1): 0, (1, 2): 0, (0, 0): 0, (2, 1): 0, (0, 2): 0, (2, 0): 0, (2, 2): 0, (1, 0): 0, (1, 1): 0}
-		"""
-		Vs = {tuple(sqr.coords):0 for row in self.playing_board.board_squares for sqr in row}
-		return Vs
-
-	def initialiseQs(self):
-		"""
-		Initialises the robot's knowledge of the Q values for every action for every square
-
-			>>> b = Board(test_board, test_arguments)
-			>>> r = b.robot
-			>>> r.Qs
-			{(0, 1): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (1, 2): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (0, 0): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (2, 1): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (0, 2): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (2, 0): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (2, 2): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (1, 0): {'West': 0, 'East': 0, 'North': 0, 'South': 0}, (1, 1): {'West': 0, 'East': 0, 'North': 0, 'South': 0}}
-		"""
-		Qs = {tuple(sqr.coords):{action:0 for action in ['North', 'East', 'South', 'West']} for row in self.playing_board.board_squares for sqr in row}
-		return Qs
-
-	def find_transitions(self, success_rate):
-		"""
-		Creates the cumulative transitions for every action
-
-			>>> b = Board(test_board, test_arguments)
-			>>> r = b.robot
-			>>> r.find_transitions(0.7)
-			{'West': [0.10000000000000002, 0.10000000000000002, 0.10000000000000002, 0.7], 'East': [0.10000000000000002, 0.7, 0.10000000000000002, 0.10000000000000002], 'North': [0.7, 0.10000000000000002, 0.10000000000000002, 0.10000000000000002], 'South': [0.10000000000000002, 0.10000000000000002, 0.7, 0.10000000000000002]}
-		"""
-		actions = ['North', 'East', 'South', 'West']
-		return {action:[success_rate if action==actions[i] else (1-success_rate)/3 for i in range(4)] for action in actions}
-
-	def find_movement(self):
-		"""
-		Finds the dictionary of movement functions
-
-			>>> b = Board(test_board, test_arguments)
-			>>> r = b.robot
-			>>> r.movement_dict['North'](1, 2)
-			(1, 2)
-			>>> r.movement_dict['East'](0, 0)
-			(1, 0)
-		"""
-		return {'North':lambda x, y: (x, min(y+1, self.playing_board.grid_height-1)), 'South':lambda x, y: (x, max(y-1, 0)), 'East':lambda x, y: (min(x+1, self.playing_board.grid_width-1), y), 'West':lambda x, y:(max(0, x-1), y)}
+		self.transitions = {action:[success_rate if action==self.actions[i] else (1-success_rate)/3 for i in range(4)] for action in self.actions}
+		self.movement_dict = {'North':lambda x, y: (x, min(y+1, self.playing_board.grid_height-1)),
+								'South':lambda x, y: (x, max(y-1, 0)),
+								'East':lambda x, y: (min(x+1, self.playing_board.grid_width-1), y),
+								'West':lambda x, y:(max(0, x-1), y)}
 
 	def select_action(self, x_pos, y_pos):
 		"""
@@ -158,27 +120,27 @@ class Robot():
 		else:
 			return random.choice(['North', 'East', 'South', 'West'])
 
-	def next_square(self, x_pos, y_pos, action):
+	def find_destination(self, x_pos, y_pos, action):
 		"""
 		Chooses the new x and y positions after taking and action, according to the faultiness
 
 			>>> random.seed(11)
 			>>> b = Board(test_board, test_arguments)
-			>>> b.robot.next_square(0, 0, 'North')
+			>>> b.robot.find_destination(0, 0, 'North')
 			(0, 1)
-			>>> b.robot.next_square(0, 0, 'North')
+			>>> b.robot.find_destination(0, 0, 'North')
 			(0, 1)
-			>>> b.robot.next_square(0, 0, 'East')
+			>>> b.robot.find_destination(0, 0, 'East')
 			(1, 0)
-			>>> b.robot.next_square(0, 0, 'East')
+			>>> b.robot.find_destination(0, 0, 'East')
 			(1, 0)
-			>>> b.robot.next_square(0, 0, 'South')
+			>>> b.robot.find_destination(0, 0, 'South')
 			(0, 0)
-			>>> b.robot.next_square(0, 0, 'South')
+			>>> b.robot.find_destination(0, 0, 'South')
 			(0, 0)
-			>>> b.robot.next_square(0, 0, 'West')
+			>>> b.robot.find_destination(0, 0, 'West')
 			(0, 0)
-			>>> b.robot.next_square(0, 0, 'West')
+			>>> b.robot.find_destination(0, 0, 'West')
 			(0, 0)
 		"""
 		rnd_num = random.random()
@@ -285,7 +247,7 @@ class Board():
 		"""
 		while self.robot.current_iteration < self.number_of_iterations:
 			action = self.robot.select_action(self.robot.x_pos, self.robot.y_pos)
-			(new_x, new_y) = self.robot.next_square(self.robot.x_pos, self.robot.y_pos, action)
+			(new_x, new_y) = self.robot.find_destination(self.robot.x_pos, self.robot.y_pos, action)
 			self.robot.current_moves += 1
 			reward = self.board_squares[new_y][new_x].reward + (self.board_squares[new_y][new_x].cost_per_move * self.robot.current_moves)
 			self.robot.Q_Learning(action, reward, self.robot.x_pos, self.robot.y_pos, new_x, new_y)
@@ -315,5 +277,5 @@ if __name__ == '__main__':
 	BoardGame = Board(board, arguments)
 	BoardGame.show_board('white', 'green', 'gold', 'red')
 	BoardGame.simulate()
-	# print {coords:max(BoardGame.robot.Qs[coords], key=lambda x: BoardGame.robot.Qs[coords][x]) for coords in BoardGame.robot.Vs}
+	print {coords:max(BoardGame.robot.Qs[coords], key=lambda x: BoardGame.robot.Qs[coords][x]) for coords in BoardGame.robot.Vs}
 	print BoardGame.robot.Qs
