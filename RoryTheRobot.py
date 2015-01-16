@@ -50,25 +50,28 @@ class Squares():
 class Robot():
 	"""
 	A class to hold the robot
-
-		>>> b = Board(test_board, test_arguments)
-		>>> r = b.robot
-		>>> r.learning_rate
-		0.2
-		>>> r.discount_rate
-		0.5
-		>>> r.current_moves
-		0
-		>>> r.current_iteration
-		0
-		>>> r.x_pos
-		0
-		>>> r.y_pos
-		0
-		>>> r.action_selection_parameter
-		0.6
 	"""
 	def __init__(self, playing_board, learning_rate, discount_rate, action_selection_parameter, success_rate):
+		"""
+		Initialises the robot
+
+			>>> b = Board(test_board, test_arguments)
+			>>> r = b.robot
+			>>> r.learning_rate
+			0.2
+			>>> r.discount_rate
+			0.5
+			>>> r.current_moves
+			0
+			>>> r.current_iteration
+			0
+			>>> r.x_pos
+			0
+			>>> r.y_pos
+			0
+			>>> r.action_selection_parameter
+			0.6
+		"""
 		self.playing_board = playing_board
 		self.action_selection_parameter = action_selection_parameter
 		self.Vs = self.initialiseVs()
@@ -80,6 +83,7 @@ class Robot():
 		self.learning_rate = learning_rate
 		self.discount_rate = discount_rate
 		self.transitions = self.find_transitions(success_rate)
+		self.movement_dict = self.find_movement()
 
 	def initialiseVs(self):
 		"""
@@ -117,43 +121,18 @@ class Robot():
 		actions = ['North', 'East', 'South', 'West']
 		return {action:[success_rate if action==actions[i] else (1-success_rate)/3 for i in range(4)] for action in actions}
 
-	def choose_random_action(self):
+	def find_movement(self):
 		"""
-		Chooses an action uniformly from the available actions for that square
+		Finds the dictionary of movement functions
 
-			>>> random.seed(4)
 			>>> b = Board(test_board, test_arguments)
-			>>> b.robot.choose_random_action()
-			'North'
-			>>> b.robot.choose_random_action()
-			'North'
-			>>> b.robot.choose_random_action()
-			'East'
-			>>> b.robot.choose_random_action()
-			'North'
+			>>> r = b.robot
+			>>> r.movement_dict['North'](1, 2)
+			(1, 2)
+			>>> r.movement_dict['East'](0, 0)
+			(1, 0)
 		"""
-		return random.choice(['North', 'East', 'South', 'West'])
-
-	def choose_optimal_action(self, x_pos, y_pos):
-		"""
-		Chooses the action with the highest Q values assosiated with it for the current square
-
-			>>> random.seed(7)
-			>>> b = Board(test_board, test_arguments)
-			>>> b.robot.Qs = {(0, 0):{'North':5, 'East':-1, 'West':2}, (0, 1):{'North':2, 'East':4, 'South':-3, 'West':11}, (1, 1):{'North':9, 'East':-17, 'South':55, 'West':6}}
-			>>> b.robot.choose_optimal_action(1, 1)
-			'South'
-			>>> b.robot.choose_optimal_action(1, 1)
-			'South'
-			>>> b.robot.choose_optimal_action(0, 1)
-			'West'
-			>>> b.robot.choose_optimal_action(0, 0)
-			'North'
-			>>> b.robot.choose_optimal_action(0, 1)
-			'West'
-		"""
-		sqr = tuple([x_pos, y_pos])
-		return str(max(self.Qs[sqr], key=lambda x: self.Qs[sqr][x]))
+		return {'North':lambda x, y: (x, min(y+1, self.playing_board.grid_height-1)), 'South':lambda x, y: (x, max(y-1, 0)), 'East':lambda x, y: (min(x+1, self.playing_board.grid_width-1), y), 'West':lambda x, y:(max(0, x-1), y)}
 
 	def select_action(self, x_pos, y_pos):
 		"""
@@ -174,9 +153,10 @@ class Robot():
 		"""
 		rnd_num = random.random()
 		if rnd_num < 1 - self.action_selection_parameter:
-			return self.choose_optimal_action(x_pos, y_pos)
+			sqr = tuple([x_pos, y_pos])
+			return str(max(self.Qs[sqr], key=lambda x: self.Qs[sqr][x]))
 		else:
-			return self.choose_random_action()
+			return random.choice(['North', 'East', 'South', 'West'])
 
 	def next_square(self, x_pos, y_pos, action):
 		"""
@@ -185,21 +165,21 @@ class Robot():
 			>>> random.seed(11)
 			>>> b = Board(test_board, test_arguments)
 			>>> b.robot.next_square(0, 0, 'North')
-			[0, 1]
+			(0, 1)
 			>>> b.robot.next_square(0, 0, 'North')
-			[0, 1]
+			(0, 1)
 			>>> b.robot.next_square(0, 0, 'East')
-			[0, 0]
+			(1, 0)
 			>>> b.robot.next_square(0, 0, 'East')
-			[1, 0]
+			(1, 0)
 			>>> b.robot.next_square(0, 0, 'South')
-			[0, 0]
+			(0, 0)
 			>>> b.robot.next_square(0, 0, 'South')
-			[0, 0]
+			(0, 0)
 			>>> b.robot.next_square(0, 0, 'West')
-			[0, 0]
+			(0, 0)
 			>>> b.robot.next_square(0, 0, 'West')
-			[0, 0]
+			(0, 0)
 		"""
 		rnd_num = random.random()
 		new_x, new_y = x_pos, y_pos
@@ -209,19 +189,7 @@ class Robot():
 			if rnd_num < sum_p:
 				direction = ['North', 'East', 'South', 'West'][p]
 				break
-		if direction == 'North':
-			new_x = x_pos
-			new_y = min(y_pos+1, self.playing_board.grid_height-1)
-		if direction == 'South':
-			new_x = x_pos
-			new_y = max(y_pos-1, 0)
-		if direction == 'East':
-			new_x = min(x_pos+1, self.playing_board.grid_width-1)
-			new_y = y_pos
-		if direction == 'West':
-			new_x = max(x_pos-1, 0)
-			new_y = y_pos
-		return [new_x, new_y]
+		return self.movement_dict[action](x_pos, y_pos)
 
 	def Q_Learning(self, action, reward, x, y, new_x, new_y):
 		"""
@@ -248,17 +216,20 @@ class Robot():
 class Board():
 	"""
 	A class which holds the playing board
-
-		>>> b = Board(test_board, test_arguments)
-		>>> b.grid_width
-		3
-		>>> b.grid_height
-		3
-		>>> b.number_of_iterations
-		500
 	"""
 
 	def __init__(self, board, arguments):
+		"""
+		Initialises the playing board
+
+			>>> b = Board(test_board, test_arguments)
+			>>> b.grid_width
+			3
+			>>> b.grid_height
+			3
+			>>> b.number_of_iterations
+			500
+		"""
 		self.grid_width = board['Board_dimentions'][0]
 		self.grid_height = board['Board_dimentions'][1]
 		[self.board_squares, self.board_to_show] = self.create_board_squares(board)
@@ -305,16 +276,16 @@ class Board():
 		"""
 		Simulates many iterations of the game while the robots learns the best policies
 
-			>>> random.seed(66)
+			>>> random.seed(67)
 			>>> b = Board(test_board, test_arguments)
-			>>> b.number_of_iterations = 5
+			>>> b.number_of_iterations = 12
 			>>> b.simulate()
 			>>> b.robot.Vs
-			{(0, 1): 0.0, (1, 2): 0, (0, 0): 0.0, (2, 1): 8.4, (0, 2): 0.0, (2, 0): 0.0, (2, 2): 0, (1, 0): 0.0, (1, 1): 0}
+			{(0, 1): 0.0, (1, 2): 0.0, (0, 0): 0.0, (2, 1): 7.4, (0, 2): 0.0, (2, 0): 0.0, (2, 2): 0, (1, 0): 0.0, (1, 1): 0}
 		"""
 		while self.robot.current_iteration < self.number_of_iterations:
 			action = self.robot.select_action(self.robot.x_pos, self.robot.y_pos)
-			[new_x, new_y] = self.robot.next_square(self.robot.x_pos, self.robot.y_pos, action)
+			(new_x, new_y) = self.robot.next_square(self.robot.x_pos, self.robot.y_pos, action)
 			self.robot.current_moves += 1
 			reward = self.board_squares[new_y][new_x].reward + (self.board_squares[new_y][new_x].cost_per_move * self.robot.current_moves)
 			self.robot.Q_Learning(action, reward, self.robot.x_pos, self.robot.y_pos, new_x, new_y)
@@ -344,4 +315,5 @@ if __name__ == '__main__':
 	BoardGame = Board(board, arguments)
 	BoardGame.show_board('white', 'green', 'gold', 'red')
 	BoardGame.simulate()
-	print {coords:max(BoardGame.robot.Qs[coords], key=lambda x: BoardGame.robot.Qs[coords][x]) for coords in BoardGame.robot.Vs}
+	# print {coords:max(BoardGame.robot.Qs[coords], key=lambda x: BoardGame.robot.Qs[coords][x]) for coords in BoardGame.robot.Vs}
+	print BoardGame.robot.Qs
