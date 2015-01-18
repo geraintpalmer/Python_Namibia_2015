@@ -22,7 +22,7 @@ test_arguments = {'<board_file>': 'board2.yml', '<number_of_iterations>': '500'}
 
 class Squares():
 	"""
-	A class which holds information about each 'normal' square and starting square on the playing board
+	A class which holds information about each square on the playing board
 	"""
 	def __init__(self, square_coords, identifier, cost_per_move, reward):
 		"""
