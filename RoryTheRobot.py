@@ -1,9 +1,9 @@
 """
-Usage: RoryTheRobot.py <board_file> <number_of_iterations>
+Usage: RoryTheRobot.py <board_file> <number_of_episodes>
 
 Arguments
     board_file			: name of .yml file from which to read in parameters of the board game
-    number_of_iterations	: number of iterations of the board game to run the learning algorithm for
+    number_of_episodes	: number of episodes of the board game to run the learning algorithm for
 
 Options
     -h / -help	: displays this help file
@@ -17,7 +17,7 @@ import random
 
 # test board and arguments for doctesting
 test_board = {'Board_dimentions': [3, 3], 'Learning_rate': 0.2, 'Starting_Position': [0, 0], 'Number_of_deaths': 1, 'Success_rate': 0.8, 'Goal_Position': [2, 2], 'Costs': {'Death': -50, 'Goal': 50, 'Move': -1}, 'Discount_rate': 0.5, 'Death_Positions': {'Death 1': [1, 1]}, 'Action_selection_parameter': 0.6}
-test_arguments = {'<board_file>': 'board2.yml', '<number_of_iterations>': '500'}
+test_arguments = {'<board_file>': 'board2.yml', '<number_of_episodes>': '500'}
 
 
 class Squares():
@@ -60,7 +60,7 @@ class Robot():
 			0.5
 			>>> r.current_moves
 			0
-			>>> r.current_iteration
+			>>> r.current_episode
 			0
 			>>> r.x_pos
 			0
@@ -85,7 +85,7 @@ class Robot():
 		self.Vs = {tuple(sqr.coords):0 for row in self.playing_board.board_squares for sqr in row}
 		self.Qs = Qs = {tuple(sqr.coords):{action:0 for action in self.actions} for row in self.playing_board.board_squares for sqr in row}
 		self.current_moves = 0
-		self.current_iteration = 0
+		self.current_episode = 0
 		self.x_pos = self.playing_board.starting_x
 		self.y_pos = self.playing_board.starting_y
 		self.learning_rate = learning_rate
@@ -189,14 +189,14 @@ class Board():
 			3
 			>>> b.grid_height
 			3
-			>>> b.number_of_iterations
+			>>> b.number_of_episodes
 			500
 		"""
 		self.grid_width = board['Board_dimentions'][0]
 		self.grid_height = board['Board_dimentions'][1]
 		[self.board_squares, self.board_to_show] = self.create_board_squares(board)
 		[self.starting_x, self.starting_y] = board['Starting_Position']
-		self.number_of_iterations = int(arguments['<number_of_iterations>'])
+		self.number_of_episodes = int(arguments['<number_of_episodes>'])
 		self.robot = Robot(self, board['Learning_rate'], board['Discount_rate'], board['Action_selection_parameter'], board['Success_rate'])
 
 	def create_board_squares(self, board):
@@ -236,16 +236,16 @@ class Board():
 
 	def simulate(self):
 		"""
-		Simulates many iterations of the game while the robots learns the best policies
+		Simulates many episodes of the game while the robots learns the best policies
 
 			>>> random.seed(67)
 			>>> b = Board(test_board, test_arguments)
-			>>> b.number_of_iterations = 12
+			>>> b.number_of_episodes = 12
 			>>> b.simulate()
 			>>> b.robot.Vs
 			{(0, 1): 0.0, (1, 2): 0.0, (0, 0): 0.0, (2, 1): 7.4, (0, 2): 0.0, (2, 0): 0.0, (2, 2): 0, (1, 0): 0.0, (1, 1): 0}
 		"""
-		while self.robot.current_iteration < self.number_of_iterations:
+		while self.robot.current_episode < self.number_of_episodes:
 			action = self.robot.select_action(self.robot.x_pos, self.robot.y_pos)
 			(new_x, new_y) = self.robot.find_destination(self.robot.x_pos, self.robot.y_pos, action)
 			self.robot.current_moves += 1
@@ -254,7 +254,7 @@ class Board():
 			self.robot.x_pos, self.robot.y_pos = new_x, new_y
 			if self.board_squares[new_y][new_x].identifier == 'Death' or self.board_squares[new_y][new_x].identifier == 'Goal':
 				self.robot.current_moves, self.robot.x_pos, self.robot.y_pos = 0, self.starting_x, self.starting_y
-				self.robot.current_iteration += 1
+				self.robot.current_episode += 1
 
 	def show_board(self, squarecol, startcol, goalcol, deathcol):
 		"""
@@ -263,6 +263,36 @@ class Board():
 		cmap = matplotlib.colors.ListedColormap([squarecol, startcol, goalcol, deathcol])
 		pcolor(self.board_to_show, edgecolors='k', cmap=cmap)
 		show()
+
+	def show_results(self):
+		"""
+		Creates a table of the optimal directions to take for each square
+		"""
+		results = []
+		for row in range(self.grid_height):
+			results.append([])
+			for col in range(self.grid_width):
+				if self.board_squares[self.grid_height-row-1][col].identifier == 'Goal':
+					results[row].append('G')
+				elif self.board_squares[self.grid_height-row-1][col].identifier == 'Death':
+					results[row].append('D')
+				elif max(self.robot.Qs[(col, self.grid_height-row-1)], key=lambda x: self.robot.Qs[(col, self.grid_height-row-1)][x]) == 'North':
+					results[row].append(u"\u2191")
+				elif max(self.robot.Qs[(col, self.grid_height-row-1)], key=lambda x: self.robot.Qs[(col, self.grid_height-row-1)][x]) == 'East':
+					results[row].append(u"\u2192")
+				elif max(self.robot.Qs[(col, self.grid_height-row-1)], key=lambda x: self.robot.Qs[(col, self.grid_height-row-1)][x]) == 'South':
+					results[row].append(u"\u2193")
+				elif max(self.robot.Qs[(col, self.grid_height-row-1)], key=lambda x: self.robot.Qs[(col, self.grid_height-row-1)][x]) == 'West':
+					results[row].append(u"\u2190")
+		the_table = plt.table(cellText=results,
+                      colWidths=[0.05] * self.grid_width,
+                      rowLabels=range(self.grid_height),
+                      colLabels=range(self.grid_width),
+                      loc='center')
+		the_table.set_fontsize(32)
+		the_table.scale(3.6, 3.6)
+		plt.show()
+
 
 
 
@@ -277,5 +307,4 @@ if __name__ == '__main__':
 	BoardGame = Board(board, arguments)
 	BoardGame.show_board('white', 'green', 'gold', 'red')
 	BoardGame.simulate()
-	print {coords:max(BoardGame.robot.Qs[coords], key=lambda x: BoardGame.robot.Qs[coords][x]) for coords in BoardGame.robot.Vs}
-	print BoardGame.robot.Qs
+	BoardGame.show_results()
