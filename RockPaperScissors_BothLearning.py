@@ -12,7 +12,7 @@ class Player:
 	"""
 	A class which holds the player that will learn
 	"""
-	def __init__(self, action_selection_parameter=0.6, learning_rate=0.1, discount_rate=0.6):
+	def __init__(self, action_selection_parameter=0.6, learning_rate=0.001, discount_rate=0.999):
 		"""
 		Initialises the player class
 
@@ -23,7 +23,6 @@ class Player:
 			0.6
 			>>> p.action_selection_parameter
 			0.6
-
 			>>> q = Player(0.7, 0.2, 0.4)
 			>>> q.learning_rate
 			0.2
