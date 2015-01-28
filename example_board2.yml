@@ -1,0 +1,22 @@
+Board_dimentions:
+  - 3
+  - 3
+Starting_Position:
+  - 0
+  - 0
+Goal_Position:
+  - 2
+  - 2
+Number_of_deaths: 1
+Death_Positions:
+  Death 1:
+    - 1
+    - 1
+Costs:
+  Move: -1
+  Death: -50
+  Goal: 50
+Success_rate: 0.8
+Action_selection_parameter: 0.6
+Learning_rate: 0.2
+Discount_rate: 0.5
