@@ -243,6 +243,9 @@ class Board():
 			>>> b.robot.Vs
 			{(0, 1): 0.0, (1, 2): 0, (0, 0): 0.0, (2, 1): 0, (0, 2): 0.0, (2, 0): 0, (2, 2): 0, (1, 0): -8.32, (1, 1): 0}
 		"""
+
+		self.robot.Qs_time_series = {sqr.coords:{action:[] for action in self.robot.actions} for row in self.squares for sqr in row}
+
 		plt.ion()
 		self.show_board()
 		wait = raw_input('Press enter to continue.')
@@ -263,6 +266,12 @@ class Board():
 				self.robot.moves = 0
 				self.robot.coords = tuple(self.starting_coords)
 				self.robot.current_episode += 1
+
+				for row in range(self.grid_height):
+					for col in range(self.grid_width):
+						for action in self.robot.actions:
+							self.robot.Qs_time_series[(col, row)][action].append(self.robot.Qs[(col, row)][action])
+
 		self.update_results()
 		wait = raw_input('Simulated. Press enter to exit.')
 
@@ -312,6 +321,24 @@ class Board():
 		the_table.scale(3, 3)
 		plt.draw()
 
+	def show_graphs(self, coords):
+		"""
+		Plots Q against time for a specific state-action pair
+		"""
+		fig, ax = plt.subplots()
+		box = ax.get_position()
+		ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+		plt.plot(self.robot.Qs_time_series[coords]['North'], color='b', label='North')
+		plt.plot(self.robot.Qs_time_series[coords]['East'], color='g', label='East')
+		plt.plot(self.robot.Qs_time_series[coords]['South'], color='r', label='South')
+		plt.plot(self.robot.Qs_time_series[coords]['West'], color='y', label='West')
+		legend = ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+		plt.xlabel('Episodes')
+		plt.ylabel('Q-Values')
+		plt.hlines(y=0, xmin=0, xmax=self.number_of_episodes)
+		plt.draw()
+		wait = raw_input('Press enter to continue.')
+
 
 
 
@@ -324,4 +351,7 @@ if __name__ == '__main__':
 	boardfile.close()
 
 	BoardGame = Board(board, arguments)
+	BoardGame.robot.learning_rate = 0.1
+	BoardGame.robot.discount_rate = 0.1
 	BoardGame.simulate()
+	BoardGame.show_graphs((3, 0))

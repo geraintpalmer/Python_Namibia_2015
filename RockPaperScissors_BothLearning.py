@@ -1,14 +1,11 @@
 import random
+import matplotlib.pyplot as plt
 
 payoff_matrix = {
-	'Rock':{'Rock':0, 'Paper':-1, 'Scissors':1},
-	'Paper':{'Rock':1, 'Paper':0, 'Scissors':-1},
-	'Scissors':{'Rock':-1, 'Paper':1, 'Scissors':0}}
-opponents_actions_markov_chain = {
-	'Rock':[0.2, 0.8, 0.0],
-	'Paper':[0.5, 0.0, 0.5],
-	'Scissors':[0.1, 0.7, 0.2]}
-number_of_iterations = 2000
+	'Rock':{'Rock':[0, 0], 'Paper':[-1, 1], 'Scissors':[1, -1]},
+	'Paper':{'Rock':[1, -1], 'Paper':[0, 0], 'Scissors':[-1, 1]},
+	'Scissors':{'Rock':[-1, 1], 'Paper':[1, -1], 'Scissors':[0, 0]}}
+number_of_episodes = 2000
 
 
 class Player:
@@ -41,6 +38,7 @@ class Player:
 		self.action_selection_parameter=action_selection_parameter
 		self.learning_rate = learning_rate
 		self.discount_rate = discount_rate
+		self.Qs_time_series = {'Rock':{'Rock':[], 'Paper':[], 'Scissors':[]}, 'Paper':{'Rock':[], 'Paper':[], 'Scissors':[]}, 'Scissors':{'Rock':[], 'Paper':[], 'Scissors':[]}}
 
 	def select_action(self):
 		"""
@@ -85,60 +83,48 @@ class Player:
 		"""
 		self.Qs[self.state][action] = (1 - self.learning_rate)*self.Qs[self.state][action] + self.learning_rate*(reward + self.discount_rate*self.Vs[self.state])
 		self.Vs[self.state] = max(self.Qs[self.state].values())
+		for action in ['Rock', 'Paper', 'Scissors']:
+			for state in ['Rock', 'Paper', 'Scissors']:
+				self.Qs_time_series[state][action].append(self.Qs[state][action])
 
-class Opponent():
-	"""
-	A class holding the opponent
-	"""
-	def __init__(self, markov_chain):
+	def show_Qs(self, player_num):
 		"""
-		Initialises the oppenent
+		Produce a graph of the Qs' time series'
+		"""
+		a = ['Rock', 'Paper', 'Scissors']
+		for state in range(3):
+			plt.subplot(3, 1, state)
+			plt.plot(self.Qs_time_series[a[state]]['Rock'], color='r', label='Rock')
+			plt.plot(self.Qs_time_series[a[state]]['Paper'], color = 'g', label='Paper')
+			plt.plot(self.Qs_time_series[a[state]]['Scissors'], color = 'b', label='Scissors')
+			plt.hlines(y=0, xmin=0, xmax=number_of_episodes)
+			plt.xlabel('Episodes')
+			plt.ylabel('Q-Values')
+			plt.title("Q-Values of Player " + str(player_num) +", state " + a[state])
+		plt.show()
 
-			>>> opponents_actions_markov_chain = {'Rock':[0.2, 0.8, 0.0], 'Paper':[0.5, 0.0, 0.5], 'Scissors':[0.1, 0.7, 0.2]}
-			>>> o = Opponent(opponents_actions_markov_chain)
-			>>> o.markov_chain
-			{'Scissors': [0.1, 0.7, 0.2], 'Paper': [0.5, 0.0, 0.5], 'Rock': [0.2, 0.8, 0.0]}
-		"""
-		self.markov_chain=markov_chain
-		self.history = random.choice(['Rock', 'Paper', 'Scissors'])
 
-	def select_action(self):
-		"""
-		Chooses which action the oppenent will play
-
-			>>> random.seed(55)
-			>>> opponents_actions_markov_chain = {'Rock':[0.2, 0.8, 0.0], 'Paper':[0.5, 0.0, 0.5], 'Scissors':[0.1, 0.7, 0.2]}
-			>>> o = Opponent(opponents_actions_markov_chain)
-			>>> o.history = 'Rock'
-			>>> o.select_action()
-			'Paper'
-			>>> o.select_action()
-			'Rock'
-			>>> o.select_action()
-			'Paper'
-			>>> o.select_action()
-			'Paper'
-			>>> o.select_action()
-			'Paper'
-		"""
-		rnd_num = random.random()
-		sum_p = 0
-		for i in range(3):
-			sum_p += self.markov_chain[self.history][i]
-			if rnd_num <= sum_p:
-				return ['Rock', 'Paper', 'Scissors'][i]
 
 
 # Simulation
 if __name__ == '__main__':
-	player = Player()
-	opponent = Opponent(opponents_actions_markov_chain)
-	for iteration in range(number_of_iterations):
-		player_action = player.select_action()
-		opponents_action = opponent.select_action()
-		reward = payoff_matrix[player_action][opponents_action]
-		player.update_Q_and_V(reward, player_action)
-		player.state, opponent.history = opponents_action, opponents_action
+	player1 = Player(0.5, 0.01, 0.9)
+	player2 = Player(0.5, 0.01, 0.9)
+	for episode in range(number_of_episodes):
+		player1_action = player1.select_action()
+		player2_action = player2.select_action()
+		reward_player1 = payoff_matrix[player1_action][player2_action][0]
+		reward_player2 = payoff_matrix[player1_action][player2_action][1]
+		player1.update_Q_and_V(reward_player1, player1_action)
+		player2.update_Q_and_V(reward_player2, player2_action)
+		player1.state, player2.state = player2_action, player1_action
+	player1.show_Qs(1)
+	player2.show_Qs(2)
 
-	print {action: max(player.Qs[action], key=lambda x: player.Qs[action][x]) for action in ['Rock', 'Paper', 'Scissors']}
+
+	print 'Player 1\'s optimal actions are:'
+	print {action: max(player1.Qs[action], key=lambda x: player1.Qs[action][x]) for action in ['Rock', 'Paper', 'Scissors']}
+	print ' '
+	print 'Player 2\'s optimal actions are:'
+	print {action: max(player2.Qs[action], key=lambda x: player2.Qs[action][x]) for action in ['Rock', 'Paper', 'Scissors']}
 
