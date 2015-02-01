@@ -79,9 +79,9 @@ class Player:
 			>>> p.state = 'Scissors'
 			>>> p.update_Q_and_V(1, 'Scissors')
 			>>> p.Vs
-			{'Scissors': 0.3, 'Paper': 0, 'Rock': 0}
+			{'Scissors': 0.1, 'Paper': 0, 'Rock': 0}
 			>>> p.Qs
-			{'Scissors': {'Scissors': 0.3, 'Paper': 0, 'Rock': 0}, 'Paper': {'Scissors': 0, 'Paper': 0, 'Rock': 0}, 'Rock': {'Scissors': 0, 'Paper': 0, 'Rock': 0}}
+			{'Scissors': {'Scissors': 0.1, 'Paper': 0, 'Rock': 0}, 'Paper': {'Scissors': 0, 'Paper': 0, 'Rock': 0}, 'Rock': {'Scissors': 0, 'Paper': 0, 'Rock': 0}}
 		"""
 		self.Qs[self.state][action] = (1 - self.learning_rate)*self.Qs[self.state][action] + self.learning_rate*(reward + self.discount_rate*self.Vs[self.state])
 		self.Vs[self.state] = max(self.Qs[self.state].values())
