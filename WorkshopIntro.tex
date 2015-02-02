@@ -1,0 +1,93 @@
+\documentclass{beamer}
+\usetheme{Singapore}
+\usepackage[utf8]{inputenc}
+\usecolortheme{crane}
+\usepackage{graphicx}
+\usepackage{iwona}
+
+
+
+\beamertemplatenavigationsymbolsempty
+
+
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+\tikzstyle{rps} = [rectangle, minimum width=3.2cm, minimum height=2cm, text centered, text width=2.2cm, draw=none, fill=none]
+\tikzstyle{arrow} = [very thick,->,>=stealth, text=red]
+
+
+
+\title
+{Rock-Paper-Scissors}
+\subtitle
+{The Q-Learning Algorithm}
+\author{Geraint Palmer}
+\date{Python Namibia, 2015 \newline \href{http://python-namibia.org}{\tiny{http://python-namibia.org}}}
+
+
+
+\begin{document}
+\frame{\titlepage}
+
+  % 1st slide, Rock-Paper-Scissors
+  \begin{frame}
+  	\frametitle{Rock-Paper-Scissors}
+	\begin{center}
+    \begin{tikzpicture}[node distance=1.5cm]
+		\node (rock) [rps] {Rock \newline \includegraphics[width=3.2cm]{rock_hand}};
+		\node (paper) [rps, below of=rock, yshift=-2.8cm, xshift=3.8cm] {Paper \newline \includegraphics[width=3.2cm]{paper_hand}};
+		\node (scissors) [rps, below of=rock, yshift=-2.8cm, xshift=-3.8cm] {Scissors \newline \includegraphics[width=3.2cm]{scissors_hand}};
+		\pause
+		\draw [red, arrow] (scissors) -- node[anchor=south] {Cuts} (paper);
+		\draw [red, arrow] (paper) -- node[anchor=south] {Wraps} (rock);
+		\draw [red, arrow] (rock) -- node[anchor=south] {Crushes} (scissors);
+    \end{tikzpicture}
+    \end{center}
+  \end{frame}
+  
+  % 2nd slide, payoff matrix
+  \begin{frame}
+  	\frametitle{Payoff Matrix}
+	\begin{center}
+	\begin{tabular}{ c | c | c | c |}
+		 & Rock & Paper & Scissors \\
+		\hline
+		Rock & 0 & -1 & 1 \\
+		\hline
+		Paper & 1 & 0 & -1 \\
+		\hline
+		Scissors & -1 & 1 & 0 \\
+		\hline
+	\end{tabular}
+	\end{center}
+  \end{frame}
+  
+  %3rd slide, markov chain
+  \begin{frame}
+  	\frametitle{Markov Chains}
+	\begin{center}
+	\begin{tabular}{ c | c | c | c |}
+		 & Rock & Paper & Scissors \\
+		\hline
+		Rock & 0.2 & 0.8 & 0.0 \\
+		\hline
+		Paper & 0.5 & 0.0 & 0.5 \\
+		\hline
+		Scissors & 0.1 & 0.7 & 0.2 \\
+		\hline
+	\end{tabular}
+	\end{center}
+  \end{frame}
+  
+  %4th slide, doctesting
+  \begin{frame}
+  	\frametitle{Doctesting}
+	\center{\texttt{python -m doctest file\_name.py}}
+  \end{frame}
+  
+\end{document}
+
+
+
+
+

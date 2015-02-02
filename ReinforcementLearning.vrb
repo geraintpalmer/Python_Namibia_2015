@@ -1,0 +1,43 @@
+\frametitle{Simulation}
+\lstset{language=Python,
+basicstyle=\tiny\ttfamily,
+commentstyle=\color{red},
+stringstyle=\color{orange},
+keywordstyle=\color{blue},
+frame=tb}
+\begin{tikzpicture}
+\node (mycodebox) [codebox] {
+\begin{lstlisting}
+def simulate(self):
+    """
+    Simulates many episodes of the game while the robots learns the best policies
+    """
+    plt.ion()
+    self.show_board()
+    wait = raw_input('Press enter to continue.')
+    print 'Simulating .......'
+    while self.robot.episode < self.number_of_episodes:
+        action = self.robot.select_action(self.robot.coords)
+        new_coords = self.robot.find_destination(self.robot.coords, action)
+        self.robot.moves += 1
+
+        reward = self.squares[new_coords[1]][new_coords[0]].reward + (
+            self.squares[new_coords[1]][new_coords[0]].move_cost * self.robot.moves)
+        self.robot.Q_Learning(action, reward, self.robot.coords, new_coords)
+
+        self.robot.coords = new_coords
+
+        if (self.squares[new_coords[1]][new_coords[0]].identifier == 'Death' or
+            self.squares[new_coords[1]][new_coords[0]].identifier == 'Goal'):
+            self.robot.moves = 0
+            self.robot.coords = tuple(self.starting_coords)
+            self.robot.episode += 1
+    self.update_results()
+    wait = raw_input('Simulated. Press enter to exit.')
+\end{lstlisting}
+};
+\only<2> \node (actionrectangle) [chooseaction, xshift=-0.4cm, yshift=0.8cm] {};
+\only<3> \node (learnrectangle) [learning, xshift=0.45cm, yshift = -0.3cm] {};
+\only<4> \node (moverectangle) [movement, xshift=-2.5cm, yshift=-1.05cm] {};
+\only<5> \node (resetrectangle) [reset, xshift=0.25cm, yshift=-2.12cm] {};
+\end{tikzpicture}
