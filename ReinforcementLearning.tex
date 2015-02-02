@@ -31,6 +31,7 @@ keywordstyle=\color{blue}\bfseries}
 \tikzstyle{learning} = [rectangle, minimum width=10.5cm, minimum height=1cm, draw=red, ultra thick, fill=none]
 \tikzstyle{movement} = [rectangle, minimum width=6cm, minimum height=0.4cm, draw=red, ultra thick, fill=none]
 \tikzstyle{reset} = [rectangle, minimum width=10cm, minimum height=1.4cm, draw=red, ultra thick, fill=none]
+\tikzstyle{stt} = [rectangle, draw=none, fill=none]
 
 
 
@@ -77,6 +78,8 @@ keywordstyle=\color{blue}\bfseries}
 		\draw [arrow] (learng) -- (dogact);
 		\draw [arrow] (dec) -- node[anchor=south] {Good} (reward);
 		\draw [arrow] (dec) -- node[anchor=south] {Bad} (punish);
+		\pause
+		\node (st) [stt, yshift=-2cm] {\huge{\textcolor{red}{\textbf{Which State?}}}};
     \end{tikzpicture}
     \end{center}
   \end{frame}
@@ -380,7 +383,7 @@ keywordstyle=\color{blue}\bfseries}
 	\href{https://www.youtube.com/watch?v=X33xYf4UlVw}{An agent learning the shortest route through a maze} \newline
 	\newline
 	\href{https://github.com/geraintpalmer/Python_Namibia_2015}{Github repository for the code} \newline
-	\href{http://geraintpalmer.github.io}{This talk and code also here}
+	This talk and code also here: \href{http://geraintpalmer.github.io}{http://geraintpalmer.github.io}
   \end{frame}
   
 \end{document}
